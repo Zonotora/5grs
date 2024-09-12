@@ -85,7 +85,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sim"
+name = "rs5g"
 version = "0.1.0"
 dependencies = [
  "num",

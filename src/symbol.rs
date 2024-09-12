@@ -1,6 +1,6 @@
 use num::Complex;
 
-#[derive(Debug)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct Symbol {
     complex: Complex<f32>,
 }

@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Modulation - 5G simulator in Rust</title>
+        <title>PDSCH - 5G simulator in Rust</title>
 
 
         <!-- Custom HTML head -->
@@ -30,6 +30,8 @@
 
         <!-- Custom theme stylesheets -->
 
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     </head>
     <body class="sidebar-visible no-js">
     <div id="body-container">
@@ -88,7 +90,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="modulation.html" class="active"><strong aria-hidden="true">1.</strong> Modulation</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="system_frame.html"><strong aria-hidden="true">1.</strong> System Frame</a></li><li class="chapter-item expanded "><a href="pdsch.html" class="active"><strong aria-hidden="true">2.</strong> PDSCH</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -173,12 +175,86 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="modulation"><a class="header" href="#modulation">Modulation</a></h1>
+                        <h1 id="pdsch-transport-process"><a class="header" href="#pdsch-transport-process">PDSCH Transport Process</a></h1>
+<ol>
+<li>Transport block CRC attachment</li>
+<li>LDPC base graph selection</li>
+<li>Code block segmentation And Code Block CRC Attachment</li>
+<li>Channel Coding</li>
+<li>Rate Matching</li>
+<li>Code Block Concatenation</li>
+<li>Scrambling</li>
+<li>Modulation</li>
+<li>Layer Mapping</li>
+<li>Antenna Port Mapping</li>
+<li>Mapping to VRB</li>
+<li>Mapping from virtual to physical resource blocks</li>
+</ol>
+<h2 id="transport-block-crc-attachment"><a class="header" href="#transport-block-crc-attachment">Transport block CRC attachment</a></h2>
+<h2 id="ldpc-base-graph-selection"><a class="header" href="#ldpc-base-graph-selection">LDPC base graph selection</a></h2>
+<h2 id="code-block-segmentation-and-code-block-crc-attachment"><a class="header" href="#code-block-segmentation-and-code-block-crc-attachment">Code block segmentation And Code Block CRC Attachment</a></h2>
+<h2 id="channel-coding"><a class="header" href="#channel-coding">Channel Coding</a></h2>
+<h2 id="rate-matching"><a class="header" href="#rate-matching">Rate Matching</a></h2>
+<h2 id="code-block-concatenation"><a class="header" href="#code-block-concatenation">Code Block Concatenation</a></h2>
+<h2 id="scrambling"><a class="header" href="#scrambling">Scrambling</a></h2>
+<h2 id="modulation"><a class="header" href="#modulation">Modulation</a></h2>
+<p>The modulation step converts the binary data stream into complex symbols that are suitable for wireless transmission. There are multiple different modulation schemes. E.g.,</p>
+<ul>
+<li>QPSK: QPSK modulates 2 bits per symbol.</li>
+<li>16QAM: 16QAM modulates 4 bits per symbol.</li>
+<li>64QAM: 64QAM modulates 6 bits per symbol.</li>
+<li>256QAM: 256QAM modulates 8 bits per symbol.</li>
+</ul>
+<p>The more bits that are modulated per symbol the higher the data rate. However, it comes at a cost of reduced robustness. E.g., 256QAM is more prone to noise and interference than QPSK, but can offer much greater data rates.</p>
+<h3 id="qpsk"><a class="header" href="#qpsk">QPSK</a></h3>
+<p>The formula for transforming a bit stream defined as <code>b(i)</code> where <code>i</code> represents the ith bit to QPSK symbols <code>d(i)</code> looks like:
+$$
+d(i)=\frac{1}{√2}[(1−2b(2i))+j(1−2b(2i+1))]
+$$</p>
+<p>Modelling the <code>modulate</code> routine for QPSK in Rust may look something like the following:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl Modulate for Qpsk {
+    fn modulate(bit_stream: &amp;BitStream) -&gt; SymbolStream {
+        // d(i)=1√2[(1−2b(2i))+j(1−2b(2i+1))]
+        //   (imag)
+        //     ^
+        //  10 | 00
+        //  ---|---&gt; (real)
+        //  11 | 01
+        let mut symbols: SymbolStream = vec![];
+        let sqrt: f32 = 1.0 / (2.0_f32).sqrt();
+        let re_map = [sqrt, -sqrt, -sqrt, sqrt];
+        let im_map = [sqrt, sqrt, -sqrt, -sqrt];
+        for bits in bit_stream {
+            let re = re_map[*bits as usize];
+            let im = im_map[*bits as usize];
+            let complex = Complex::new(re, im);
+            let symbol = Symbol::new(complex);
+            symbols.push(symbol)
+        }
+        symbols
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>$$
+r(n)=\frac{1}{√2}(1−2⋅c(2n))+j\frac{1}{√2}(1−2⋅c(2n+1)).
+$$</p>
+<p>[1] <a href="https://www.nrexplained.com/modulation">https://www.nrexplained.com/modulation</a></p>
+<h2 id="layer-mapping"><a class="header" href="#layer-mapping">Layer Mapping</a></h2>
+<h2 id="antenna-port-mapping"><a class="header" href="#antenna-port-mapping">Antenna Port Mapping</a></h2>
+<h2 id="mapping-to-vrb"><a class="header" href="#mapping-to-vrb">Mapping to VRB</a></h2>
+<h2 id="mapping-from-virtual-to-physical-resource-blocks"><a class="header" href="#mapping-from-virtual-to-physical-resource-blocks">Mapping from virtual to physical resource blocks</a></h2>
+<h1 id="references"><a class="header" href="#references">References</a></h1>
+<p><a href="https://www.sharetechnote.com/html/5G/5G_PDSCH.html#PDSCH_Transport_Process">https://www.sharetechnote.com/html/5G/5G_PDSCH.html#PDSCH_Transport_Process</a></p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="system_frame.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
 
 
                         <div style="clear: both"></div>
@@ -187,6 +263,9 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="system_frame.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
 
             </nav>
 

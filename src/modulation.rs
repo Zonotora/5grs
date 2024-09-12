@@ -25,20 +25,21 @@ struct Qpsk;
 impl Modulate for Qpsk {
     fn modulate(bit_stream: &BitStream) -> SymbolStream {
         // d(i)=1√2[(1−2b(2i))+j(1−2b(2i+1))]
+        //   (imag)
+        //     ^
+        //  10 | 00
+        //  ---|---> (real)
+        //  11 | 01
         let mut symbols: SymbolStream = vec![];
-        let masks = [0xc0, 0x30, 0x0c, 0x03];
         let sqrt: f32 = 1.0 / (2.0_f32).sqrt();
+        let re_map = [sqrt, -sqrt, -sqrt, sqrt];
+        let im_map = [sqrt, sqrt, -sqrt, -sqrt];
         for bits in bit_stream {
-            for (i, mask) in masks.iter().enumerate() {
-                let value = (bits & mask) >> ((3 - i) * 2);
-                let first = value & 0x1;
-                let second = (value >> 1) & 0x1;
-                let re = sqrt * (1 - 2 * first as i8) as f32;
-                let im = sqrt * (1 - 2 * second as i8) as f32;
-                let complex = Complex::new(re, im);
-                let symbol = Symbol::new(complex);
-                symbols.push(symbol)
-            }
+            let re = re_map[*bits as usize];
+            let im = im_map[*bits as usize];
+            let complex = Complex::new(re, im);
+            let symbol = Symbol::new(complex);
+            symbols.push(symbol)
         }
         symbols
     }
