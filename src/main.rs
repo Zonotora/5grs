@@ -1,5 +1,5 @@
-use sim::cell::Cell;
-use sim::modulation::Modulator;
+use rs5g::cell::Cell;
+use rs5g::modulation::Modulator;
 
 fn main() {
     let cell = Cell::new();
