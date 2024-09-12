@@ -1,0 +1,6 @@
+[book]
+authors = ["Zonotora"]
+language = "en"
+multilingual = false
+src = "src"
+title = "5G simulator in Rust"
