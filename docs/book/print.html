@@ -299,6 +299,48 @@
 <h2 id="rate-matching"><a class="header" href="#rate-matching">Rate Matching</a></h2>
 <h2 id="code-block-concatenation"><a class="header" href="#code-block-concatenation">Code Block Concatenation</a></h2>
 <h2 id="scrambling"><a class="header" href="#scrambling">Scrambling</a></h2>
+<p>Scrambling introduces randomness in the transmitted data to ensure uniform power distribution, interference management, data privacy and channel estimation. The scrambling and descrambling process is performed by the transmitter and receiver respecively.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn scramble(&amp;self, bit_stream: &amp;BitStream) -&gt; BitStream {
+    // TS 38.211 Sec. 5.2.1
+    // Pseudo-random sequence defined by a length-31 Gold sequence.
+    // https://en.wikipedia.org/wiki/Gold_code
+
+    // Generate scrambling sequence.
+    let length = bit_stream.len();
+    let n_c = 1600;
+    let seq_length = length + n_c;
+    let mut x1 = vec![0u8; seq_length + 31];
+    let mut x2 = vec![0u8; seq_length + 31];
+    let mut c = vec![0u8; length];
+
+    x1[1..31].fill(1);
+
+    for n in 0..31 {
+        x2[n] = ((self.c_init &gt;&gt; n) &amp; 0x1) as u8;
+    }
+
+    for n in 0..seq_length {
+        x1[n + 31] = x1[n + 3] ^ x1[n];
+    }
+
+    for n in 0..seq_length {
+        x2[n + 31] = x2[n + 3] ^ x2[n + 2] ^ x2[n + 1] ^ x2[n];
+    }
+
+    for n in 0..length {
+        c[n] = x1[n + n_c] ^ x2[n + n_c];
+    }
+
+    // Scramble bit stream.
+    bit_stream
+        .iter()
+        .zip(c)
+        .map(|(bits, scramble)| bits ^ scramble)
+        .collect()
+}
+<span class="boring">}</span></code></pre></pre>
 <h2 id="modulation"><a class="header" href="#modulation">Modulation</a></h2>
 <p>The modulation step converts the binary data stream into complex symbols that are suitable for wireless transmission. There are multiple different modulation schemes. E.g.,</p>
 <ul>

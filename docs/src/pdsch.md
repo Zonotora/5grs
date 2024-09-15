@@ -21,6 +21,51 @@
 ## Rate Matching
 ## Code Block Concatenation
 ## Scrambling
+
+Scrambling introduces randomness in the transmitted data to ensure uniform power distribution, interference management, data privacy and channel estimation. The scrambling and descrambling process is performed by the transmitter and receiver respecively.
+
+```rust
+pub fn scramble(&self, bit_stream: &BitStream) -> BitStream {
+    // TS 38.211 Sec. 5.2.1
+    // Pseudo-random sequence defined by a length-31 Gold sequence.
+    // https://en.wikipedia.org/wiki/Gold_code
+
+    // Generate scrambling sequence.
+    let length = bit_stream.len();
+    let n_c = 1600;
+    let seq_length = length + n_c;
+    let mut x1 = vec![0u8; seq_length + 31];
+    let mut x2 = vec![0u8; seq_length + 31];
+    let mut c = vec![0u8; length];
+
+    x1[1..31].fill(1);
+
+    for n in 0..31 {
+        x2[n] = ((self.c_init >> n) & 0x1) as u8;
+    }
+
+    for n in 0..seq_length {
+        x1[n + 31] = x1[n + 3] ^ x1[n];
+    }
+
+    for n in 0..seq_length {
+        x2[n + 31] = x2[n + 3] ^ x2[n + 2] ^ x2[n + 1] ^ x2[n];
+    }
+
+    for n in 0..length {
+        c[n] = x1[n + n_c] ^ x2[n + n_c];
+    }
+
+    // Scramble bit stream.
+    bit_stream
+        .iter()
+        .zip(c)
+        .map(|(bits, scramble)| bits ^ scramble)
+        .collect()
+}
+```
+
+
 ## Modulation
 The modulation step converts the binary data stream into complex symbols that are suitable for wireless transmission. There are multiple different modulation schemes. E.g.,
   - QPSK: QPSK modulates 2 bits per symbol.

@@ -1,9 +1,7 @@
+use crate::{BitStream, SymbolStream};
 use num::Complex;
 
 use crate::symbol::Symbol;
-
-type BitStream = Vec<u8>;
-type SymbolStream = Vec<Symbol>;
 
 trait Modulate {
     fn modulate(bit_stream: &BitStream) -> SymbolStream;
