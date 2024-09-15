@@ -3,9 +3,14 @@ use rs5g::modulation::Modulator;
 
 fn main() {
     let cell = Cell::new();
-    let modulator = Modulator::new();
+    let modulator = Modulator::default();
 
-    let bits = vec![0x03];
-    let symbols = modulator.modulate(&bits);
-    println!("{:#?}", symbols);
+    for bits in 0..0b100 {
+        println!("{:#?}", bits);
+        let bits = vec![bits];
+        let symbols = modulator.modulate(&bits);
+        println!("{:#?}", symbols);
+        let bits = modulator.demodulate(&symbols);
+        println!("{:#?}", bits);
+    }
 }

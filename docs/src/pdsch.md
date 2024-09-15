@@ -40,29 +40,39 @@ $$
 Modelling the `modulate` routine for QPSK in Rust may look something like the following:
 
 ```rust
-impl Modulate for Qpsk {
-    fn modulate(bit_stream: &BitStream) -> SymbolStream {
-        // d(i)=1√2[(1−2b(2i))+j(1−2b(2i+1))]
-        //   (imag)
-        //     ^
-        //  10 | 00
-        //  ---|---> (real)
-        //  11 | 01
-        let mut symbols: SymbolStream = vec![];
-        let sqrt: f32 = 1.0 / (2.0_f32).sqrt();
-        let re_map = [sqrt, -sqrt, -sqrt, sqrt];
-        let im_map = [sqrt, sqrt, -sqrt, -sqrt];
-        for bits in bit_stream {
-            let re = re_map[*bits as usize];
-            let im = im_map[*bits as usize];
-            let complex = Complex::new(re, im);
-            let symbol = Symbol::new(complex);
-            symbols.push(symbol)
-        }
-        symbols
-    }
+fn modulate(bit_stream: &BitStream) -> SymbolStream {
+    // d(i)=1√2[(1−2b(2i))+j(1−2b(2i+1))]
+    //   (imag)
+    //     ^
+    //  10 | 00
+    //  ---|---> (real)
+    //  11 | 01
+    bit_stream
+       .iter()
+       .map(|bits| {
+           let re = if bits & 0b10 == 0 { 1.0 } else { -1.0 };
+           let im = if bits & 0b01 == 0 { 1.0 } else { -1.0 };
+           Symbol::new(Complex::new(re, im))
+       })
+       .collect()
 }
 ```
+
+while the `demodulate` routine looks something like:
+```rust
+fn demodulate(symbols: &SymbolStream) -> BitStream {
+    symbols
+        .iter()
+        .map(|symbol| {
+            let mut bits = 0u8;
+            bits |= if symbol.complex.re <= 0.0 { 0b10 } else { 0 };
+            bits |= if symbol.complex.im <= 0.0 { 0b01 } else { 0 };
+            bits
+        })
+        .collect()
+}
+```
+
 
 $$
 r(n)=\frac{1}{√2}(1−2⋅c(2n))+j\frac{1}{√2}(1−2⋅c(2n+1)).

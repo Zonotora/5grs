@@ -30,28 +30,28 @@ impl Modulate for Qpsk {
         //  10 | 00
         //  ---|---> (real)
         //  11 | 01
-        let mut symbols: SymbolStream = vec![];
-        let sqrt: f32 = 1.0 / (2.0_f32).sqrt();
-        let re_map = [sqrt, -sqrt, -sqrt, sqrt];
-        let im_map = [sqrt, sqrt, -sqrt, -sqrt];
-        for bits in bit_stream {
-            let re = re_map[*bits as usize];
-            let im = im_map[*bits as usize];
-            let complex = Complex::new(re, im);
-            let symbol = Symbol::new(complex);
-            symbols.push(symbol)
-        }
-        symbols
+        bit_stream
+            .iter()
+            .map(|bits| {
+                let re = if bits & 0b10 == 0 { 1.0 } else { -1.0 };
+                let im = if bits & 0b01 == 0 { 1.0 } else { -1.0 };
+                Symbol::new(Complex::new(re, im))
+            })
+            .collect()
     }
 }
 
 impl Demodulate for Qpsk {
     fn demodulate(symbols: &SymbolStream) -> BitStream {
-        let a = 0.70710677;
-        let b = [(a, a), (a, -a), (-a, a), (-a, -a)];
-        let c = [0x0, 0x1, 0x2, 0x3];
-
-        vec![]
+        symbols
+            .iter()
+            .map(|symbol| {
+                let mut bits = 0u8;
+                bits |= if symbol.complex.re <= 0.0 { 0b10 } else { 0 };
+                bits |= if symbol.complex.im <= 0.0 { 0b01 } else { 0 };
+                bits
+            })
+            .collect()
     }
 }
 
@@ -60,12 +60,6 @@ pub struct Modulator {
 }
 
 impl Modulator {
-    pub fn new() -> Self {
-        Modulator {
-            scheme: ModulationScheme::Qpsk,
-        }
-    }
-
     pub fn modulate(&self, bits: &BitStream) -> SymbolStream {
         match self.scheme {
             ModulationScheme::Qpsk => Qpsk::modulate(bits),
@@ -77,6 +71,30 @@ impl Modulator {
         match self.scheme {
             ModulationScheme::Qpsk => Qpsk::demodulate(symbols),
             _ => unimplemented!(),
+        }
+    }
+}
+
+impl Default for Modulator {
+    fn default() -> Self {
+        Self {
+            scheme: ModulationScheme::Qpsk,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+
+    #[test]
+    fn test_modulate_demodulate() {
+        let modulator = Modulator::default();
+        for bits in 0..0b100 {
+            let symbols = modulator.modulate(&vec![bits]);
+            let modulated_bits = modulator.demodulate(&symbols)[0];
+            assert_eq!(bits, modulated_bits);
         }
     }
 }

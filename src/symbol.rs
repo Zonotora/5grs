@@ -2,7 +2,7 @@ use num::Complex;
 
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Symbol {
-    complex: Complex<f32>,
+    pub complex: Complex<f32>,
 }
 
 impl Symbol {

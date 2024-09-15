@@ -316,27 +316,36 @@ $$</p>
 <p>Modelling the <code>modulate</code> routine for QPSK in Rust may look something like the following:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>impl Modulate for Qpsk {
-    fn modulate(bit_stream: &amp;BitStream) -&gt; SymbolStream {
-        // d(i)=1√2[(1−2b(2i))+j(1−2b(2i+1))]
-        //   (imag)
-        //     ^
-        //  10 | 00
-        //  ---|---&gt; (real)
-        //  11 | 01
-        let mut symbols: SymbolStream = vec![];
-        let sqrt: f32 = 1.0 / (2.0_f32).sqrt();
-        let re_map = [sqrt, -sqrt, -sqrt, sqrt];
-        let im_map = [sqrt, sqrt, -sqrt, -sqrt];
-        for bits in bit_stream {
-            let re = re_map[*bits as usize];
-            let im = im_map[*bits as usize];
-            let complex = Complex::new(re, im);
-            let symbol = Symbol::new(complex);
-            symbols.push(symbol)
-        }
-        symbols
-    }
+</span>fn modulate(bit_stream: &amp;BitStream) -&gt; SymbolStream {
+    // d(i)=1√2[(1−2b(2i))+j(1−2b(2i+1))]
+    //   (imag)
+    //     ^
+    //  10 | 00
+    //  ---|---&gt; (real)
+    //  11 | 01
+    bit_stream
+       .iter()
+       .map(|bits| {
+           let re = if bits &amp; 0b10 == 0 { 1.0 } else { -1.0 };
+           let im = if bits &amp; 0b01 == 0 { 1.0 } else { -1.0 };
+           Symbol::new(Complex::new(re, im))
+       })
+       .collect()
+}
+<span class="boring">}</span></code></pre></pre>
+<p>while the <code>demodulate</code> routine looks something like:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn demodulate(symbols: &amp;SymbolStream) -&gt; BitStream {
+    symbols
+        .iter()
+        .map(|symbol| {
+            let mut bits = 0u8;
+            bits |= if symbol.complex.re &lt;= 0.0 { 0b10 } else { 0 };
+            bits |= if symbol.complex.im &lt;= 0.0 { 0b01 } else { 0 };
+            bits
+        })
+        .collect()
 }
 <span class="boring">}</span></code></pre></pre>
 <p>$$
